@@ -10,3 +10,4 @@ uvicorn
 pydantic
 wordcloud
 python-multipart
+python-dotenv

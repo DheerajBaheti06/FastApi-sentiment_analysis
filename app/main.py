@@ -1,27 +1,44 @@
-from fastapi import FastAPI
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI, Depends, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.routes.health import router as health_router
 from app.routes.analyze import router as analyze_router
 from app.routes.predict import router as predict_router
 from app.routes.wordcloud import router as wordcloud_router
 
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"), override=False)
 app = FastAPI(title="SIH Sentiment Service", version="1.0.0")
 
-# CORS for easy frontend integration (adjust origins as needed)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
+if allowed_origins_env.strip() == "*":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+
+app.add_middleware(CORSMiddleware, allow_origins=allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+trusted_hosts_env = os.getenv("TRUSTED_HOSTS")
+if trusted_hosts_env:
+    hosts = [h.strip() for h in trusted_hosts_env.split(",") if h.strip()]
+    if hosts:
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
+
+API_KEY = os.getenv("API_KEY")
+
+def require_api_key(x_api_key: str | None = Header(default=None)):
+    if not API_KEY:
+        return
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 # Routers
 app.include_router(health_router)
-app.include_router(analyze_router)
-app.include_router(wordcloud_router)
-app.include_router(predict_router)
+app.include_router(analyze_router, dependencies=[Depends(require_api_key)])
+app.include_router(wordcloud_router, dependencies=[Depends(require_api_key)])
+app.include_router(predict_router, dependencies=[Depends(require_api_key)])
 
 
 @app.get("/")
