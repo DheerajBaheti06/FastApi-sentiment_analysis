@@ -1,0 +1,36 @@
+# Python caches
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual envs
+.venv
+venv
+
+# Local caches
+.cache
+cache
+hf_cache
+torch_cache
+
+# Notebooks and datasets
+*.ipynb
+data/
+
+# Windows artifacts
+Thumbs.db
+Desktop.ini
+
+# Git/IDE
+.git
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+
+# Local runtimes
+python-embed/
+
+# Logs
+*.log

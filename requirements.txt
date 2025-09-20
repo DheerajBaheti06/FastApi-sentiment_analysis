@@ -1,0 +1,12 @@
+torch
+transformers
+scikit-learn
+joblib
+numpy
+tqdm
+ipywidgets
+fastapi
+uvicorn
+pydantic
+wordcloud
+python-multipart

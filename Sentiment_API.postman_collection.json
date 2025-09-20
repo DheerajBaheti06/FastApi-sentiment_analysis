@@ -1,0 +1,144 @@
+{
+  "info": {
+    "_postman_id": "8a6cc9b6-8f15-4a13-9bca-8d3df4a0a7f1",
+    "name": "SIH Sentiment Service",
+    "description": "Collection for SIH Sentiment Service (FastAPI). Includes health check, wordcloud, and analyze endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "protocolProfileBehavior": {},
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Wordcloud (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/wordcloud?text=Great%20policy%20update.%20This%20hurts%20MSMEs."
+      }
+    },
+    {
+      "name": "Wordcloud (Generate - POST)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  var data = pm.response.json();",
+              "  if (data && data.key) pm.collectionVariables.set('wordcloud_key', data.key);",
+              "  if (data && data.url) pm.collectionVariables.set('wordcloud_url', data.url);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"texts\": [\"Great policy update.\", \"This hurts MSMEs.\"]\n}"
+        },
+        "url": "{{baseUrl}}/wordcloud/generate"
+      }
+    },
+    {
+      "name": "Wordcloud (GET by key)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/wordcloud/{{wordcloud_key}}"
+      }
+    },
+    {
+      "name": "Analyze (Compact)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  var data = pm.response.json();",
+              "  if (data && data.wordcloud && data.wordcloud.url) pm.collectionVariables.set('wordcloud_url', data.wordcloud.url);",
+              "  if (data && data.wordcloud && data.wordcloud.key) pm.collectionVariables.set('wordcloud_key', data.wordcloud.key);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"texts\": [\"Great policy update.\", \"This hurts MSMEs.\", \"\", \"!!!\"],\n  \"max_summary_sentences\": 2,\n  \"include_wordcloud\": true\n}"
+        },
+        "url": "{{baseUrl}}/analyze/compact"
+      }
+    },
+    {
+      "name": "Predict",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"texts\": [\"Great policy update.\", \"This hurts MSMEs.\"]\n}"
+        },
+        "url": "{{baseUrl}}/predict"
+      }
+    },
+    {
+      "name": "Predict (Upload File)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "data/sample_comments_large.json"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/predict/upload"
+      }
+    },
+    {
+      "name": "Analyze (Upload File)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "data/sample_comments_large.json"
+            },
+            { "key": "max_summary_sentences", "type": "text", "value": "3" },
+            { "key": "include_wordcloud", "type": "text", "value": "true" }
+          ]
+        },
+        "url": "{{baseUrl}}/analyze/compact/upload"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" },
+    { "key": "wordcloud_key", "value": "" },
+    { "key": "wordcloud_url", "value": "" }
+  ]
+}

@@ -1,0 +1,19 @@
+### Health
+GET http://127.0.0.1:8000/health
+
+### Analyze (compact)
+POST http://127.0.0.1:8000/analyze/compact
+Content-Type: application/json
+
+{
+  "texts": [
+    "Great policy update.",
+    "This hurts MSMEs.",
+    "",
+    "!!!"
+  ],
+  "max_summary_sentences": 2,
+  "include_wordcloud": true
+}
+
+### If your server runs on a different port, change 8000 accordingly.

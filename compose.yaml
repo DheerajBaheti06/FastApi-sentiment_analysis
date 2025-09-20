@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    image: sentiment-api:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # If you want to mount models from host instead of COPY into image, comment out COPYs in Dockerfile and uncomment volumes below
+      # FINBERT_PATH: "/models/FINBERT_FINAL.BIN"
+      # SVM_PATH: "/models/SVM_FINAL.PKL"
+      # TFIDF_PATH: "/models/TFIDF_VECTORIZER_FINAL.PKL"
+      # HOST/PORT are controlled by CMD, override if needed
+      HOST: "0.0.0.0"
+      PORT: "8000"
+    # volumes:
+    #   - ./models:/models:ro
+    #   - ./data:/data:ro
+    restart: unless-stopped
