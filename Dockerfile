@@ -1,39 +1,62 @@
 # syntax=docker/dockerfile:1.7
 
-FROM python:3.10-slim AS base
+# ---------- Builder: install wheels to a separate prefix ----------
+FROM python:3.10-slim AS builder
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    # Prefer official CPU wheels for PyTorch to avoid source builds
+    PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
 
+WORKDIR /app
+COPY requirements.txt ./
+
+# Build tools only in builder, then purge
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --upgrade pip \
+    && python -m pip install --no-cache-dir --prefix=/install -r requirements.txt \
+    && apt-get purge -y build-essential \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------- Runtime: minimal libs + app code ----------
+FROM python:3.10-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# System deps: build basics + libgomp for numpy, font libs for wordcloud
+# Runtime libs only
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libopenblas-dev \
     libgomp1 \
     libjpeg62-turbo \
     zlib1g \
     fonts-dejavu-core \
+    ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first for better layer caching
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy site-packages and binaries from builder stage
+COPY --from=builder /install /usr/local
 
-# Copy source
+# Copy source code
 COPY app ./app
 COPY predictor.py ./predictor.py
-COPY FINBERT_FINAL.BIN ./FINBERT_FINAL.BIN
-COPY SVM_FINAL.PKL ./SVM_FINAL.PKL
-COPY TFIDF_VECTORIZER_FINAL.PKL ./TFIDF_VECTORIZER_FINAL.PKL
 
-# Default host/port via env; can be overridden at runtime
+# Optional: download models at build time via args (recommended for Railway)
+ARG FINBERT_URL=""
+ARG SVM_URL=""
+ARG TFIDF_URL=""
+RUN set -eux; \
+    if [ -n "$FINBERT_URL" ]; then curl -L "$FINBERT_URL" -o FINBERT_FINAL.BIN; fi; \
+    if [ -n "$SVM_URL" ]; then curl -L "$SVM_URL" -o SVM_FINAL.PKL; fi; \
+    if [ -n "$TFIDF_URL" ]; then curl -L "$TFIDF_URL" -o TFIDF_VECTORIZER_FINAL.PKL; fi
+
+# Service config
 ENV HOST=0.0.0.0 \
     PORT=8000
-
 EXPOSE 8000
 
 # Start FastAPI with uvicorn (bind to $PORT if provided by platform)
