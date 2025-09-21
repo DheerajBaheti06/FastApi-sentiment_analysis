@@ -8,6 +8,7 @@ from app.routes.health import router as health_router
 from app.routes.analyze import router as analyze_router
 from app.routes.predict import router as predict_router
 from app.routes.wordcloud import router as wordcloud_router
+from app.routes.debug import router as debug_router
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"), override=False)
 app = FastAPI(title="SIH Sentiment Service", version="1.0.0")
@@ -39,6 +40,7 @@ app.include_router(health_router)
 app.include_router(analyze_router, dependencies=[Depends(require_api_key)])
 app.include_router(wordcloud_router, dependencies=[Depends(require_api_key)])
 app.include_router(predict_router, dependencies=[Depends(require_api_key)])
+app.include_router(debug_router)
 
 
 @app.get("/")

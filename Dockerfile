@@ -56,7 +56,12 @@ ARG TFIDF_URL=""
 RUN set -eux; \
     if [ -n "$FINBERT_URL" ]; then curl -L "$FINBERT_URL" -o FINBERT_FINAL.BIN; fi; \
     if [ -n "$SVM_URL" ]; then curl -L "$SVM_URL" -o SVM_FINAL.PKL; fi; \
-    if [ -n "$TFIDF_URL" ]; then curl -L "$TFIDF_URL" -o TFIDF_VECTORIZER_FINAL.PKL; fi
+        if [ -n "$TFIDF_URL" ]; then curl -L "$TFIDF_URL" -o TFIDF_VECTORIZER_FINAL.PKL; fi; \
+        # Sanity check: if FINBERT is present but tiny, likely an HTML page was downloaded
+        if [ -f FINBERT_FINAL.BIN ]; then \
+            sz=$(wc -c < FINBERT_FINAL.BIN); \
+            if [ "$sz" -lt 10000000 ]; then echo "ERROR: FINBERT_FINAL.BIN too small ($sz bytes). Check FINBERT_URL is a direct asset link." >&2; exit 1; fi; \
+        fi
 
 # Service config
 ENV HOST=0.0.0.0 \
