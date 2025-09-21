@@ -63,10 +63,9 @@ RUN set -eux; \
             if [ "$sz" -lt 10000000 ]; then echo "ERROR: FINBERT_FINAL.BIN too small ($sz bytes). Check FINBERT_URL is a direct asset link." >&2; exit 1; fi; \
         fi
 
-# Service config (Railway uses PORT=8080)
-ENV HOST=0.0.0.0 \
-    PORT=8080
+# Service config (let platform provide PORT)
+ENV HOST=0.0.0.0
 EXPOSE 8080
 
 # Start FastAPI with uvicorn (bind to $PORT if provided by platform)
-CMD ["/bin/sh", "-lc", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers --log-level info"]
+CMD ["/bin/sh", "-lc", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers --access-log --log-level info"]
