@@ -24,14 +24,21 @@ except Exception:
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, BertConfig
 
 MODEL_NAME = 'ProsusAI/finbert'
-BATCH_SIZE = 16
-MAX_LENGTH = 128
+# Smaller defaults to reduce peak memory on small instances; override via env
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "4"))
+MAX_LENGTH = int(os.getenv("MAX_LENGTH", "96"))
 ENSEMBLE_WEIGHT = 0.7
 
 label_map = {'positive': 0, 'negative': 1, 'neutral': 2}
 inverse_label_map = {v: k for k, v in label_map.items()}
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Limit CPU threads to avoid oversubscription and reduce memory/CPU spikes
+try:
+    torch.set_num_threads(int(os.getenv("TORCH_NUM_THREADS", "1")))
+except Exception:
+    pass
 
 class SentimentDataset(Dataset):
     def __init__(self, texts, tokenizer, max_len):
@@ -77,8 +84,17 @@ class HybridSentimentPredictor:
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         config = BertConfig(num_labels=len(label_map))
         self.finbert_model = AutoModelForSequenceClassification.from_config(config)
-        sd = torch.load(finbert_path, map_location=device)
+        sd = torch.load(finbert_path, map_location="cpu")
         self.finbert_model.load_state_dict(sd)
+        # Apply dynamic quantization on CPU to shrink memory footprint
+        if device.type == "cpu":
+            try:
+                self.finbert_model = torch.quantization.quantize_dynamic(
+                    self.finbert_model, {torch.nn.Linear}, dtype=torch.qint8
+                )
+            except Exception:
+                # If quantization is unsupported, continue without it
+                pass
         self.finbert_model.to(device).eval()
 
         self.svm_model = None

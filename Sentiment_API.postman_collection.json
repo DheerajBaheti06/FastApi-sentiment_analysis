@@ -5,6 +5,14 @@
     "description": "Collection for SIH Sentiment Service (FastAPI). Includes health check, wordcloud, and analyze endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-API-Key", "type": "string" },
+      { "key": "value", "value": "{{apiKey}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
   "protocolProfileBehavior": {},
   "item": [
     {
@@ -138,6 +146,7 @@
   ],
   "variable": [
     { "key": "baseUrl", "value": "http://127.0.0.1:8000" },
+    { "key": "apiKey", "value": "" },
     { "key": "wordcloud_key", "value": "" },
     { "key": "wordcloud_url", "value": "" }
   ]

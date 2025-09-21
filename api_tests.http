@@ -1,8 +1,18 @@
-### Health
-GET http://127.0.0.1:8000/health
+@local = http://127.0.0.1:8000
+@railway = https://fastapi-sentimentanalysis-production.up.railway.app
+# If API_KEY is enabled in Railway, set it here for requests below
+@apiKey = 
+
+### Health (local)
+GET {{local}}/health
+
+### Health (railway)
+GET {{railway}}/health
+X-API-Key: {{apiKey}}
 
 ### Analyze (compact)
-POST http://127.0.0.1:8000/analyze/compact
+### Analyze (compact) - local
+POST {{local}}/analyze/compact
 Content-Type: application/json
 
 {
@@ -16,4 +26,73 @@ Content-Type: application/json
   "include_wordcloud": true
 }
 
-### If your server runs on a different port, change 8000 accordingly.
+### Analyze (compact) - railway
+POST {{railway}}/analyze/compact
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "texts": [
+    "Great policy update.",
+    "This hurts MSMEs.",
+    "",
+    "!!!"
+  ],
+  "max_summary_sentences": 2,
+  "include_wordcloud": true
+}
+
+### Predict - local
+POST {{local}}/predict
+Content-Type: application/json
+
+{
+  "texts": ["Great policy update.", "This hurts MSMEs."],
+  "batch": true
+}
+
+### Predict - railway
+POST {{railway}}/predict
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "texts": ["Great policy update.", "This hurts MSMEs."],
+  "batch": true
+}
+
+### Analyze Upload (railway JSON file)
+POST {{railway}}/analyze/compact/upload
+X-API-Key: {{apiKey}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="sample_comments_large.json"
+Content-Type: application/json
+
+{{file data/sample_comments_large.json}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="max_summary_sentences"
+
+3
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="include_wordcloud"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Predict Upload (railway JSON file)
+POST {{railway}}/predict/upload
+X-API-Key: {{apiKey}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="sample_comments_large.json"
+Content-Type: application/json
+
+{{file data/sample_comments_large.json}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Notes:
+# - Set {{apiKey}} if your Railway has API_KEY set; leave blank otherwise.
+# - You can switch {{local}} to a LAN/hosted URL if needed.

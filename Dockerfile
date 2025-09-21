@@ -24,7 +24,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---------- Runtime: minimal libs + app code ----------
 FROM python:3.10-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    TOKENIZERS_PARALLELISM=false
 
 WORKDIR /app
 
