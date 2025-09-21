@@ -10,6 +10,7 @@ from app.routes.analyze import router as analyze_router
 from app.routes.predict import router as predict_router
 from app.routes.wordcloud import router as wordcloud_router
 from app.routes.debug import router as debug_router
+from app.services.sentiment_service import get_predictor
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"), override=False)
 app = FastAPI(title="SIH Sentiment Service", version="1.0.0")
@@ -60,5 +61,11 @@ async def _log_startup():
         base = "/app"
         finbert = os.getenv("FINBERT_PATH") or os.path.join(base, "FINBERT_FINAL.BIN")
         logger.info("Startup: FINBERT_PATH=%s exists=%s", finbert, os.path.exists(finbert))
+        # Warm-up: initialize predictor once to avoid first-request latency
+        try:
+            _ = get_predictor()
+            logger.info("Startup: predictor initialized")
+        except Exception as me:
+            logger.error("Startup: predictor init failed: %s", me)
     except Exception as e:
         logger.error("Startup logging failed: %s", e)

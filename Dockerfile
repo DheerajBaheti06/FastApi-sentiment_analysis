@@ -63,6 +63,13 @@ RUN set -eux; \
             if [ "$sz" -lt 10000000 ]; then echo "ERROR: FINBERT_FINAL.BIN too small ($sz bytes). Check FINBERT_URL is a direct asset link." >&2; exit 1; fi; \
         fi
 
+# Prefetch tokenizer to avoid first-request download
+ENV TRANSFORMERS_CACHE=/app/.cache/hf \
+    HF_HOME=/app/.cache/hf \
+    HUGGINGFACE_HUB_CACHE=/app/.cache/hf/hub
+RUN mkdir -p /app/.cache/hf && \
+    python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('ProsusAI/finbert', cache_dir='/app/.cache/hf')"
+
 # Service config (let platform provide PORT)
 ENV HOST=0.0.0.0
 EXPOSE 8080
