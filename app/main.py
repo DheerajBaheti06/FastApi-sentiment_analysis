@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import logging
 from fastapi import FastAPI, Depends, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -12,6 +13,7 @@ from app.routes.debug import router as debug_router
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"), override=False)
 app = FastAPI(title="SIH Sentiment Service", version="1.0.0")
+logger = logging.getLogger("uvicorn.error")
 
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
 if allowed_origins_env.strip() == "*":
@@ -46,3 +48,17 @@ app.include_router(debug_router)
 @app.get("/")
 def root():
     return {"service": "SIH Sentiment Service", "version": "1.0.0"}
+
+
+@app.on_event("startup")
+async def _log_startup():
+    try:
+        logger.info("Startup: PORT=%s HOST=%s", os.getenv("PORT"), os.getenv("HOST"))
+        logger.info("Startup: ALLOWED_ORIGINS=%s", os.getenv("ALLOWED_ORIGINS", "*"))
+        logger.info("Startup: TRUSTED_HOSTS=%s", os.getenv("TRUSTED_HOSTS", ""))
+        logger.info("Startup: API_KEY set=%s", bool(os.getenv("API_KEY")))
+        base = "/app"
+        finbert = os.getenv("FINBERT_PATH") or os.path.join(base, "FINBERT_FINAL.BIN")
+        logger.info("Startup: FINBERT_PATH=%s exists=%s", finbert, os.path.exists(finbert))
+    except Exception as e:
+        logger.error("Startup logging failed: %s", e)
